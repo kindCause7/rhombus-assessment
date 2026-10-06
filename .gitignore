@@ -1,2 +1,26 @@
-.agent-browser
-.pi
+.agent-browser/
+.pi/
+.env
+.env.*
+!.env.example
+node_modules/
+playwright-report/
+test-results/
+coverage/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Local coding-environment files mounted into this workspace.
+.bash_profile
+.bashrc
+.gitconfig
+.mcp.json
+.profile
+.ripgreprc
+.zprofile
+.zshrc
+
+# Downloaded cloud outputs and run evidence may contain customer data.
+artifacts/
+data-validation/output/
