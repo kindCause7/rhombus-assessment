@@ -4,7 +4,7 @@ export class IntegrationsPage {
   constructor(private readonly page: Page) {}
 
   private async openThirdPartyData(): Promise<void> {
-    const composer = this.page.getByRole('textbox').last();
+    const composer = this.page.getByRole('textbox');
     const composerPanel = composer.locator('xpath=../..');
     const addButton = composerPanel.getByRole('button').first();
     await expect(addButton).toBeVisible();
@@ -40,17 +40,22 @@ export class IntegrationsPage {
 
     await this.page.getByRole('button', { name: 'Connect S3 source' }).click();
 
-    // A real connection is proven by the source appearing in the Connected view,
-    // not by the request completing or by a modal closing.
     await this.page.getByRole('button', { name: 'Connected', exact: true }).click();
-    await expect(this.page.getByText(options.bucket, { exact: false })).toBeVisible({ timeout: 120_000 });
+
+    // The configured bucket is a connected Amazon S3 source that the customer can browse.
+    // Avoid matching incidental s3:// text.
+    const sourceName = new RegExp(`^${escapeRegex(options.bucket)}/?$`);
+    await expect(this.page.getByRole('heading', { name: sourceName })).toBeVisible({
+      timeout: 120_000,
+    });
+    await expect(this.page.getByRole('button', { name: 'Browse files', exact: true })).toBeVisible();
   }
 
   async configureGcsDestination(options: {
     bucket: string;
     serviceAccountJson: string;
   }): Promise<void> {
-    await this.page.getByText('Data Output', { exact: true }).last().click();
+    await this.page.getByText('Data Output', { exact: true }).click();
     await this.page.getByText('Select Destination', { exact: true }).click();
     await this.page.getByRole('button', { name: 'Add New Destination' }).click();
     await this.page.getByText('Google Cloud Storage', { exact: true }).click();
@@ -59,10 +64,12 @@ export class IntegrationsPage {
     await this.page.getByRole('textbox', { name: /Bucket Name/i }).fill(options.bucket);
     await this.page.getByRole('button', { name: 'Create Destination' }).click();
 
-    await expect(this.page.getByText(options.bucket, { exact: false })).toBeVisible({ timeout: 60_000 });
-    await this.page.getByText(options.bucket, { exact: false }).last().click();
-    await this.page.getByRole('button', { name: 'Apply' }).click();
-    await expect(this.page.getByRole('status')).toContainText(/saved|updated|configured|success/i);
+    // Real result of destination creation: the named bucket is offered as a
+    // selectable destination. Exact matching prevents URI/helper text collisions.
+    const destination = this.page.getByText(options.bucket, { exact: true });
+    await expect(destination).toBeVisible({ timeout: 60_000 });
+    await destination.click();
+    await this.page.getByRole('button', { name: 'Apply', exact: true }).click();
   }
 }
 

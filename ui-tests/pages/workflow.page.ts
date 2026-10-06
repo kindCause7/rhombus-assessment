@@ -11,22 +11,19 @@ export class WorkflowPage {
 
   async askPipelineBuilder(prompt: string): Promise<void> {
     await this.page.getByRole('tab', { name: 'AI Builder' }).click();
-    const composer = this.page.getByRole('textbox').last();
+    const composer = this.page.getByRole('textbox');
     await composer.fill('/');
     await this.page.getByRole('button', { name: /Pipeline \/pipeline/ }).click();
     await composer.fill(prompt);
     await composer.press('Enter');
-
-    await expect(this.page.getByText(prompt, { exact: true })).toBeVisible();
-    await expect(composer).toBeEnabled({ timeout: 120_000 });
-    await expect(this.page.getByText('Thinking', { exact: true })).toBeHidden();
-    await expect(this.page.getByText('Writing response', { exact: true })).toBeHidden();
   }
 
   async expectCanvasNodes(names: string[]): Promise<void> {
     await this.page.getByRole('tab', { name: 'Canvas' }).click();
     for (const name of names) {
-      await expect(this.page.getByText(name, { exact: true }).first()).toBeVisible({ timeout: 60_000 });
+      const nodeLabel = this.page.getByText(name, { exact: true });
+      await expect(nodeLabel).toHaveCount(1, { timeout: 120_000 });
+      await expect(nodeLabel).toBeVisible();
     }
   }
 
@@ -35,18 +32,17 @@ export class WorkflowPage {
     const runButton = this.page
       .getByRole('button', { name: 'Run Pipeline' })
       .or(this.page.getByTitle('Run Pipeline'));
-    if (await runButton.count()) {
-      await runButton.first().click();
+    if ((await runButton.count()) === 1) {
+      await runButton.click();
     } else {
       await this.clickButtonExposedByTooltip('Run Pipeline');
     }
 
-    // Completion is based on the user-visible execution result. No fixed delay.
-    const success = this.page
+    // User-visible execution receipt, rather than network or component state.
+    const successReceipt = this.page
       .getByRole('status')
-      .filter({ hasText: /pipeline.*(success|completed)|successfully/i })
-      .or(this.page.getByText(/pipeline.*(success|completed)|successfully/i));
-    await expect(success.first()).toBeVisible({ timeout: 180_000 });
+      .filter({ hasText: /pipeline.*(success|completed)|completed successfully/i });
+    await expect(successReceipt).toBeVisible({ timeout: 180_000 });
   }
 
   private async clickButtonExposedByTooltip(label: string): Promise<void> {

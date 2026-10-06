@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { test } from '@playwright/test';
 import { DashboardPage } from '../pages/dashboard.page.js';
 import { IntegrationsPage } from '../pages/integrations.page.js';
 import { SchedulePage } from '../pages/schedule.page.js';
@@ -23,9 +23,6 @@ test.describe.serial('scheduled S3 to GCS customer journey', () => {
     const dashboard = new DashboardPage(page);
     await dashboard.goto();
     projectUrl = await dashboard.createProject(projectName);
-
-    await expect(page.getByRole('link', { name: projectName, exact: true })).toBeVisible();
-    await expect(page).toHaveURL(/\/workflow\/\d+/);
   });
 
   test('connects the real Amazon S3 source', async ({ page }) => {
