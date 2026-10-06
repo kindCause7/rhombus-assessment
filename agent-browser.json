@@ -1,0 +1,5 @@
+{
+  "session": "rhombus",
+  "profile": "./.agent-browser/rhombus-profile",
+  "headed": true
+}
