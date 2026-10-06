@@ -10,10 +10,17 @@ const baseURL = process.env.RHOMBUS_BASE_URL ?? 'https://rhombusai.com';
 const statePath = path.resolve(
   process.env.RHOMBUS_STORAGE_STATE ?? 'ui-tests/.auth/user.json',
 );
+const viewport = {
+  width: Number(process.env.RHOMBUS_VIEWPORT_WIDTH ?? 1920),
+  height: Number(process.env.RHOMBUS_VIEWPORT_HEIGHT ?? 1080),
+};
 
 async function main(): Promise<void> {
-  const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext();
+  const browser = await chromium.launch({
+    headless: false,
+    args: ['--start-maximized', `--window-size=${viewport.width},${viewport.height + 120}`],
+  });
+  const context = await browser.newContext({ viewport });
   const page = await context.newPage();
 
   console.log('Complete sign-in in the browser window. The state is saved after Dashboard is visible.');

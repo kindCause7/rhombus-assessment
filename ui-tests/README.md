@@ -30,9 +30,14 @@ RHOMBUS_GCS_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"..."}
 RHOMBUS_SCHEDULE_CRON=* * * * *
 RHOMBUS_SCHEDULE_TIMEOUT_MS=240000
 RHOMBUS_PROJECT_PREFIX=ui-etl
+# Optional; these are already the defaults.
+RHOMBUS_VIEWPORT_WIDTH=1920
+RHOMBUS_VIEWPORT_HEIGHT=1080
 ```
 
 The S3 connection uses Rhombus' generated bucket policy, not AWS access keys. The GCS value must be the complete JSON document on one dotenv line.
+
+The browser uses a 1920×1080 viewport and requests a maximized headed window. This keeps the complete four-node canvas in view, including the Data Output node. Override the viewport variables only when the test desktop supports a larger size; reducing them can cause React Flow to defer rendering off-screen nodes.
 
 ## Capture authentication
 
