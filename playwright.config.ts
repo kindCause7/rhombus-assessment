@@ -1,0 +1,35 @@
+import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import fs from 'node:fs';
+import path from 'node:path';
+
+dotenv.config({ path: process.env.ENV_FILE ?? '.env' });
+
+const storageState = path.resolve(
+  process.env.RHOMBUS_STORAGE_STATE ?? 'ui-tests/.auth/user.json',
+);
+
+export default defineConfig({
+  testDir: './ui-tests/tests',
+  fullyParallel: true,
+  forbidOnly: Boolean(process.env.CI),
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+  timeout: 90_000,
+  expect: { timeout: 15_000 },
+  use: {
+    baseURL: process.env.RHOMBUS_BASE_URL ?? 'https://rhombusai.com',
+    storageState: fs.existsSync(storageState) ? storageState : undefined,
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
+  },
+  outputDir: 'test-results',
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+});

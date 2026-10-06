@@ -1,0 +1,20 @@
+{
+  "name": "rhombus-quality-exercise",
+  "private": true,
+  "scripts": {
+    "ui:auth": "tsx ui-tests/scripts/capture-auth.ts",
+    "test:ui": "playwright test --config=playwright.config.ts",
+    "test:ui:headed": "playwright test --config=playwright.config.ts --headed",
+    "test:ui:journey": "playwright test --config=playwright.config.ts ui-tests/tests/pipeline-journey.spec.ts",
+    "test:ui:smoke": "playwright test --config=playwright.config.ts ui-tests/tests/authenticated-shell.spec.ts",
+    "test:ui:debug": "PWDEBUG=1 playwright test --config=playwright.config.ts",
+    "typecheck:ui": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.52.0",
+    "@types/node": "22.15.3",
+    "dotenv": "16.5.0",
+    "tsx": "4.19.3",
+    "typescript": "5.8.3"
+  }
+}

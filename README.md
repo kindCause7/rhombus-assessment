@@ -8,6 +8,16 @@
 
 **Web Application:** https://rhombusai.com/
 
+## UI test suite
+
+The Playwright suite is documented in [`ui-tests/README.md`](ui-tests/README.md). After configuring the ignored `.env` and capturing authentication with `yarn ui:auth`, run:
+
+```bash
+yarn test:ui
+```
+
+The suite separates a safe authenticated-shell smoke test from a serial, modular customer journey covering project creation, Amazon S3 connection, AI-only pipeline construction, Google Cloud Storage output, scheduling, and the first successful scheduled execution. It uses no fixed sleeps and asserts persisted, user-visible outcomes.
+
 ## Purpose
 
 Test Rhombus AI the way a customer uses it: as a scheduled ETL pipeline from a cloud source to a cloud destination. Build the pipeline, then break its input on purpose and find out how the platform responds.
