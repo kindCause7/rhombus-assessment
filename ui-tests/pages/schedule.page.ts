@@ -4,9 +4,10 @@ export class SchedulePage {
   constructor(private readonly page: Page) {}
 
   async createCustom(cron: string): Promise<void> {
-    await this.page.getByRole('tab', { name: 'Schedule' }).click();
-    const add = this.page.getByRole('button', { name: 'Add Schedule' });
-    const first = this.page.getByRole('button', { name: 'Create your first schedule' });
+    await this.page.getByRole('tab', { name: 'Schedule', exact: true }).click();
+    const sidebar = this.page.getByTestId('right-sidebar');
+    const add = sidebar.getByRole('button', { name: 'Add Schedule', exact: true });
+    const first = sidebar.getByRole('button', { name: 'Create your first schedule', exact: true });
     if (await add.isVisible()) {
       await add.click();
     } else {
@@ -20,8 +21,8 @@ export class SchedulePage {
     await this.page.getByRole('button', { name: 'Create', exact: true }).click();
 
     // The persisted card is the outcome: active recurrence plus a computed next run.
-    await expect(this.page.getByText(cron, { exact: true })).toBeVisible();
-    await expect(this.page.getByText('Active', { exact: true })).toBeVisible();
-    await expect(this.page.getByText(/Next run/i)).toBeVisible();
+    await expect(sidebar.getByText(cron, { exact: true })).toBeVisible();
+    await expect(sidebar.getByText('Active', { exact: true })).toBeVisible();
+    await expect(sidebar.getByText(/Next run/i)).toBeVisible();
   }
 }

@@ -16,8 +16,8 @@ export class DashboardPage {
 
     // The uniquely named project is present in project navigation and opens
     // its own persisted workflow URL.
-    const projectLink = this.page.getByRole('link', { name, exact: true });
-    await expect(projectLink).toBeVisible();
+    const projectLink = this.page.getByTestId('project-card').filter({ hasText: name });
+    await expect(projectLink).toHaveText(name);
     await projectLink.click();
     await expect(this.page).toHaveURL(/\/workflow\/\d+(?:$|[?#])/);
     return this.page.url();

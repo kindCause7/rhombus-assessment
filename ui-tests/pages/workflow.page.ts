@@ -6,7 +6,7 @@ export class WorkflowPage {
   async goto(url: string): Promise<void> {
     await this.page.goto(url);
     await expect(this.page).toHaveURL(/\/workflow\/\d+(?:$|[?#])/);
-    await expect(this.page.getByRole('tab', { name: 'AI Builder' })).toBeVisible();
+    await expect(this.page.getByTestId('right-sidebar')).toBeVisible();
   }
 
   async askPipelineBuilder(prompt: string): Promise<void> {
@@ -19,48 +19,36 @@ export class WorkflowPage {
   }
 
   async expectCanvasNodes(names: string[]): Promise<void> {
-    await this.page.getByRole('tab', { name: 'Canvas' }).click();
+    await this.page.getByRole('tab', { name: 'Canvas', exact: true }).click();
+    const canvas = this.page.getByTestId('rf__wrapper');
     for (const name of names) {
-      const nodeLabel = this.page.getByText(name, { exact: true });
-      await expect(nodeLabel).toHaveCount(1, { timeout: 120_000 });
-      await expect(nodeLabel).toBeVisible();
+      const node = canvas.getByTestId(nodeTestId(name));
+      await expect(node).toHaveCount(1, { timeout: 120_000 });
+      await expect(node).toContainText(name);
+      await expect(node).toBeVisible();
     }
   }
 
   async runPipelineAndExpectSuccess(): Promise<void> {
     await this.page.getByRole('tab', { name: 'Canvas' }).click();
-    const runButton = this.page
-      .getByRole('button', { name: 'Run Pipeline' })
-      .or(this.page.getByTitle('Run Pipeline'));
-    if ((await runButton.count()) === 1) {
-      await runButton.click();
-    } else {
-      await this.clickButtonExposedByTooltip('Run Pipeline');
-    }
+    await this.page.getByTestId('run-pipeline').click();
 
-    // User-visible execution receipt, rather than network or component state.
+    // success is asserted from the customer-visible execution receipt
     const successReceipt = this.page
       .getByRole('status')
       .filter({ hasText: /pipeline.*(success|completed)|completed successfully/i });
     await expect(successReceipt).toBeVisible({ timeout: 180_000 });
   }
+}
 
-  private async clickButtonExposedByTooltip(label: string): Promise<void> {
-    const buttons = this.page.getByRole('button');
-    for (let index = 0; index < (await buttons.count()); index += 1) {
-      const button = buttons.nth(index);
-      if (!(await button.isVisible())) continue;
-      await button.hover();
-      const tooltip = this.page.getByText(label, { exact: true });
-      const appeared = await tooltip
-        .waitFor({ state: 'visible', timeout: 750 })
-        .then(() => true)
-        .catch(() => false);
-      if (appeared) {
-        await button.click();
-        return;
-      }
-    }
-    throw new Error(`No visible button exposed the tooltip "${label}"`);
-  }
+function nodeTestId(name: string): RegExp {
+  const ids: Record<string, string> = {
+    'Data Input': 'input',
+    'Remove Duplicates': 'remove_duplicate',
+    'Text Cleanup': 'text_cleanup',
+    'Data Output': 'output',
+  };
+  const id = ids[name];
+  if (!id) throw new Error(`No node test id is registered for "${name}"`);
+  return new RegExp(`^node-${id}-(selected|unselected)$`);
 }

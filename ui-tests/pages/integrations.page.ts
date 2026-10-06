@@ -55,9 +55,10 @@ export class IntegrationsPage {
     bucket: string;
     serviceAccountJson: string;
   }): Promise<void> {
-    await this.page.getByText('Data Output', { exact: true }).click();
-    await this.page.getByText('Select Destination', { exact: true }).click();
-    await this.page.getByRole('button', { name: 'Add New Destination' }).click();
+    await this.page.getByTestId(/^node-output-(selected|unselected)$/).click();
+    const sidebar = this.page.getByTestId('right-sidebar');
+    await sidebar.getByText('Select Destination', { exact: true }).click();
+    await sidebar.getByRole('button', { name: 'Add New Destination', exact: true }).click();
     await this.page.getByText('Google Cloud Storage', { exact: true }).click();
 
     await this.page.getByRole('textbox', { name: /Service Account JSON/i }).fill(options.serviceAccountJson);
@@ -69,7 +70,7 @@ export class IntegrationsPage {
     const destination = this.page.getByText(options.bucket, { exact: true });
     await expect(destination).toBeVisible({ timeout: 60_000 });
     await destination.click();
-    await this.page.getByRole('button', { name: 'Apply', exact: true }).click();
+    await sidebar.getByRole('button', { name: 'Apply', exact: true }).click();
   }
 }
 
