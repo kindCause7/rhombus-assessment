@@ -8,6 +8,7 @@
     "test:ui:journey": "playwright test --config=playwright.config.ts ui-tests/tests/pipeline-journey.spec.ts",
     "test:ui:smoke": "playwright test --config=playwright.config.ts ui-tests/tests/authenticated-shell.spec.ts",
     "test:ui:debug": "PWDEBUG=1 playwright test --config=playwright.config.ts",
+    "test:api": "playwright test --config=api-tests/playwright.config.ts",
     "typecheck:ui": "tsc --noEmit"
   },
   "devDependencies": {

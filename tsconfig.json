@@ -9,5 +9,5 @@
     "resolveJsonModule": true,
     "types": ["node", "@playwright/test"]
   },
-  "include": ["playwright.config.ts", "ui-tests/**/*.ts"]
+  "include": ["playwright.config.ts", "ui-tests/**/*.ts", "api-tests/**/*.ts"]
 }
