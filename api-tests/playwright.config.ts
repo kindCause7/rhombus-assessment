@@ -20,5 +20,8 @@ export default defineConfig({
     storageState: fs.existsSync(storageState) ? storageState : undefined,
     // API traces include request headers, so do not persist bearer tokens in artifacts.
     trace: 'off',
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+      : undefined,
   },
 });

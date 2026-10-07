@@ -26,7 +26,10 @@ Current coverage:
 
 - authenticated profile response;
 - unauthenticated profile rejection;
-- project creation followed by independent project-list verification.
+- project creation followed by independent project-list verification;
+- execution-history pagination and lifecycle integrity.
+
+The execution-history tests deliberately avoid mutable values such as exact project names, execution counts, timestamps, and generated identifiers. They instead verify durable invariants: valid pagination, positive and unique execution IDs, project ownership, chronological lifecycle events, non-negative durations, and internally consistent success records.
 
 The project-creation test uses a unique name and leaves the project available as evidence because a project-delete endpoint has not been captured. Remove these `api-project-*` projects manually after reviewing the run.
 
