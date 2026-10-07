@@ -21,8 +21,8 @@ export class SchedulePage {
     await this.page.getByRole('button', { name: 'Create', exact: true }).click();
 
     // The persisted card is the outcome: active recurrence plus a computed next run.
-    await expect(sidebar.getByText(cron, { exact: true })).toBeVisible();
-    await expect(sidebar.getByText('Active', { exact: true })).toBeVisible();
-    await expect(sidebar.getByText(/Next run/i)).toBeVisible();
+    await expect(sidebar).toContainText(`Custom: ${cron}`);
+    await expect(sidebar).toContainText('Active');
+    await expect(sidebar).toContainText('Next run:');
   }
 }
