@@ -12,7 +12,6 @@ import {
 const missing = missingJourneyEnvironment();
 
 test.describe.serial('scheduled S3 to GCS customer journey', () => {
-  test.describe.configure({ timeout: 300_000 });
   test.skip(missing.length > 0, `Cloud journey is not configured: ${missing.join(', ')}`);
 
   const config = missing.length === 0 ? journeyConfig() : undefined;
@@ -37,6 +36,7 @@ test.describe.serial('scheduled S3 to GCS customer journey', () => {
   });
 
   test('uses only the AI builder to create and run the cleaning pipeline', async ({ page }) => {
+    test.setTimeout(90_000);
     const workflow = new WorkflowPage(page);
     await workflow.goto(projectUrl);
 
@@ -55,6 +55,7 @@ test.describe.serial('scheduled S3 to GCS customer journey', () => {
   });
 
   test('configures GCS output and proves a baseline run succeeds', async ({ page }) => {
+    test.setTimeout(90_000);
     const workflow = new WorkflowPage(page);
     await workflow.goto(projectUrl);
 
@@ -67,10 +68,28 @@ test.describe.serial('scheduled S3 to GCS customer journey', () => {
       bucket: config!.gcsBucket,
       serviceAccountJson: config!.gcsServiceAccountJson,
     });
-    await workflow.runPipelineAndExpectSuccess();
+  });
+
+  test('blocks reruns while a pipeline is active and allows one after completion', async ({ page, context }) => {
+    const workflow = new WorkflowPage(page);
+    await workflow.goto(projectUrl);
+
+    // Apply starts the third execution. Run must remain unavailable until it finishes.
+    await new IntegrationsPage(page).applyConfiguredGcsOutput();
+    await workflow.expectRunBlocked();
+
+    const monitorPage = await context.newPage();
+    const dashboard = new DashboardPage(monitorPage);
+    await dashboard.waitForSuccessfulExecutionCount(projectName, 3);
+    await workflow.expectRunAvailable();
+
+    // Once the active run is complete, a customer can safely start the fourth run.
+    await workflow.runPipeline();
+    await dashboard.waitForSuccessfulExecutionCount(projectName, 4);
   });
 
   test('activates a recurring schedule and observes a successful scheduled run', async ({ page }) => {
+    test.setTimeout(config!.scheduleTimeoutMs + 15_000);
     const workflow = new WorkflowPage(page);
     await workflow.goto(projectUrl);
     await new SchedulePage(page).createCustom(config!.scheduleCron);
