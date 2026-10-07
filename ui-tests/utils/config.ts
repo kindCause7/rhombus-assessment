@@ -43,7 +43,7 @@ export function journeyConfig(): JourneyConfig {
     gcsBucket: process.env.RHOMBUS_GCS_BUCKET!,
     gcsServiceAccountJson: serviceAccount,
     scheduleCron: process.env.RHOMBUS_SCHEDULE_CRON || '* * * * *',
-    scheduleTimeoutMs: Number(process.env.RHOMBUS_SCHEDULE_TIMEOUT_MS || 90_000),
+    scheduleTimeoutMs: Number(process.env.RHOMBUS_SCHEDULE_TIMEOUT_MS || 60_000),
     projectPrefix: process.env.RHOMBUS_PROJECT_PREFIX || 'ui-etl',
   };
 }
