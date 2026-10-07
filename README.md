@@ -1,83 +1,114 @@
-# Software Engineer Intern (LLM Observability & Quality Assurance) | Rhombus AI
+# Rhombus test submission
 
-## Take-Home Exercise
+## 1. Setup and how to run
 
-**Deadline:** 1 week from receiving the exercise
+### Shared setup
 
-**System Under Test:** Rhombus AI
+Requirements:
 
-**Web Application:** https://rhombusai.com/
+- Node.js and Yarn
+- Playwright Chromium or an installed Chrome executable
+- A Rhombus account
+- Real Amazon S3 and Google Cloud Storage test resources for the full UI journey
 
-## UI test suite
-
-The Playwright suite is documented in [`ui-tests/README.md`](ui-tests/README.md). After configuring the ignored `.env` and capturing authentication with `yarn ui:auth`, run:
+Install dependencies and the Playwright browser:
 
 ```bash
-yarn test:ui
+yarn install
+yarn playwright install chromium
 ```
 
-The suite separates a safe authenticated-shell smoke test from a serial, modular customer journey covering project creation, Amazon S3 connection, AI-only pipeline construction, Google Cloud Storage output, scheduling, and the first successful scheduled execution. It uses no fixed sleeps and asserts persisted, user-visible outcomes.
+Keep secrets in the ignored root `.env` file. Do not commit cloud credentials, bearer tokens, Playwright state, reports, traces, or videos containing customer data.
 
-## Purpose
+Capture an authenticated Rhombus browser session:
 
-Test Rhombus AI the way a customer uses it: as a scheduled ETL pipeline from a cloud source to a cloud destination. Build the pipeline, then break its input on purpose and find out how the platform responds.
+```bash
+yarn ui:auth
+```
 
-We are evaluating your judgement, test quality and how clearly you report what you find. We are not grading the platform. A clear, reproducible write-up of something that goes wrong is a strong result.
+Complete the Auth0 login in the browser. The state is written to the ignored `ui-tests/.auth/user.json` file.
 
-## The Scenario
+### UI test suite
 
-### 1. Build the pipeline
+Place `datasets/baseline.csv` at the configured S3 object key. Configure the S3 bucket policy with the read-only Rhombus principals shown by the connection screen, and grant the GCS service account `storage.objects.create` on the destination bucket.
 
-- **Sign up** for Rhombus AI (https://rhombusai.com/).
-- **Connect Amazon S3** as the source and upload a messy CSV of your choice (duplicates, missing values, inconsistent formatting, invalid entries).
-- **Build a cleaning pipeline using the AI builder only.** No manual transformations.
-- **Set Google Cloud Storage** as the destination.
-- **Schedule the pipeline** at a regular interval. Wait for one successful scheduled run as your baseline.
+Configure `.env`:
 
-### 2. Schema drift
+```dotenv
+RHOMBUS_BASE_URL=https://rhombusai.com
+RHOMBUS_STORAGE_STATE=ui-tests/.auth/user.json
+RHOMBUS_S3_BUCKET=your-source-bucket
+RHOMBUS_S3_REGION=us-east-1
+RHOMBUS_S3_OBJECT_KEY=baseline.csv
+RHOMBUS_S3_PREFIX=
+RHOMBUS_GCS_BUCKET=your-output-bucket
+RHOMBUS_GCS_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"..."}
+RHOMBUS_SCHEDULE_CRON=* * * * *
+RHOMBUS_SCHEDULE_TIMEOUT_MS=60000
+RHOMBUS_PROJECT_PREFIX=ui-etl
+```
 
-A change to the structure of the data. Before the next scheduled run, change the source file to drop a column, rename a column, change a data type and add a new column. Test each change on its own, then all together, and find out:
+Run the suite:
 
-- Does Rhombus AI stop the pipeline, warn, or carry on? If it carries on, what reaches GCS?
-- Do the logs explain the problem clearly?
-- When you give the error to the chatbot, does it diagnose it correctly, and does its fix actually work?
-- What happens to the schedule afterwards?
+```bash
+yarn test:ui          # smoke test and full journey
+yarn test:ui:smoke    # authenticated shell only
+yarn test:ui:journey  # S3 → AI cleaning → GCS → schedule journey
+yarn test:ui:headed   # visible browser
+```
 
-### 3. Semantic drift
+The full journey creates persistent projects and schedules. Remove them manually after reviewing the run.
 
-A change to the meaning of the data while the structure stays the same, for example dollars becoming cents or month/day dates becoming day/month. Introduce at least two cases. Does Rhombus AI notice? Does your data validation catch it?
+More detail: [`ui-tests/README.md`](ui-tests/README.md).
 
-## Deliverables
+### API test suite
 
-One GitHub repository containing:
+The API fixture opens the authenticated Dashboard to capture its short-lived `Authorization` and `X-Org-Id` headers. It then sends requests directly to `https://api.rhombusai.com` with Playwright's `APIRequestContext`.
 
-- **`/ui-tests/`:** Playwright or Cypress tests automating the pipeline journey (S3 connection, AI-built pipeline, GCS destination, schedule). Runnable from the command line, no fixed sleeps, with assertions on real outcomes.
-- **`/api-tests/`:** at least two tests that call the backend directly (find the requests in the browser's network tab). At least one negative test, such as invalid credentials or an unauthenticated request. Assert on status codes and response contents.
-- **`/data-validation/`:** a script comparing the GCS output with the S3 input. Check schema, row counts, that cleaning rules were applied, determinism, and your semantic drift cases. Run it on the baseline and every drifted run.
-- **`/datasets/`:** the baseline file and every drifted version.
-- **`/observations/`:** one Markdown file per drift case (e.g. `schema-rename-column.md`), covering what you changed, what you expected, what happened, what the logs and chatbot said, and whether the fix worked. Detailed enough to reproduce. Put screenshots and log excerpts in `/observations/evidence/` and link to them.
-- **`README.md`**, with:
-    1. **Setup and how to run** each test suite.
-    2. **Observations summary:** a table with one row per drift case (change, pipeline stopped?, chatbot fix worked?, severity) linking to its file in `/observations/`, plus your top three findings in a few lines.
-    3. **Usability feedback.** One or two paragraphs: what you found most helpful or enjoyable, what was frustrating or difficult, and how we could make the platform more useful and efficient for you.
-    4. **Demo video link.** A short walkthrough of your UI tests, API tests and data validation.
+```bash
+yarn ui:auth   # repeat when the saved session has expired
+yarn test:api
+```
 
-## Optional Bonus: Observability Dashboard
+The API suite covers authenticated and unauthenticated profile access, project creation, and execution-history invariants. Project creation leaves uniquely named `api-project-*` resources because a delete endpoint was not identified. It can return `403` when the account has reached its project limit.
 
-Build a live HTML dashboard and host it (GitHub Pages, Vercel, or similar). Track across all your test runs:
+If Playwright Chromium is unavailable but Chrome is installed, provide its path:
 
-- **Pipeline health by scenario**: success/failure rate for baseline, each drift type, and combined drifts.
-- **Output consistency**: For each pipeline configuration, run the same input 3 times. Does the output match every time, or does it vary? If variance, document it with side-by-side diffs.
-- **Capability heat map**: Which drift types does Rhombus AI handle cleanly? Which break? (E.g. "column rename: handled; column drop: breaks; semantic drift: missed").
-- **Time & resource tracking**: Pipeline execution time for baseline vs. each drift scenario.
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome yarn test:api
+```
 
-Present it as a single-page interactive dashboard viewable in a browser at a public link (include the link in your README).
+More detail and the identified endpoint tree: [`api-tests/README.md`](api-tests/README.md).
 
-## Final Notes
+### Data-validation suite
 
-There is no expectation of perfection. We are looking at judgement, clarity and trade-offs. Quality over quantity.
+Data-validation testing was intentionally skipped for this submission. There are no data-validation tests to run.
 
-## Resources
+## 2. Observations summary
 
-- Platform documentation: https://doc.rhombusai.com/
-- You can also ask the AI builder directly for help with the platform.
+Data-drift validation was skipped, so no drift cases were evaluated.
+
+| Change | Pipeline stopped? | Chatbot fix worked? | Severity | Observation |
+|---|---:|---:|---|---|
+
+### Top three findings
+
+_Not assessed because data-validation testing was skipped._
+
+## 3. Usability feedback
+
+I like the concept of creating a drag and drop interface that can connect a variety of data sources. I am not sure if this is a fully unique concept however, and would also like to know how this platform distinguishes itself from various other offerings that provide similar no-code agent building platforms.
+
+There were some usability issues that I noticed while interacting with the platform that are detailed below
+- Unable to access the main landing chat interface after navigating to the "Dashboard", and returning to "New Project" simply asks to specify a new project name. This seems quite unintuitive
+no autosave on dashboard
+- Occasionally, when constructing a node there would be a "tag is empty" warning despite entering tag
+- The dropdown for the selection of the AWS region should provide a scroll interface instead of the "hover"-based scrolling which could get quite frustrating
+- When opening the AI builder chat sessions across multiple instances/tabs, the chat generation triggered on one page does not show on another. Perhaps could use some streaming protocol (e.g. WebSockets).
+- It seems limiting that the pipelines appear to only be capable of running on a single fixed dataset, where the dataset needs to be manually specified rather than using a "glob".
+- As revealed during the UI-testing, pipeline scheduling appears to fail. On the client-side "Next run:" is followed by an empty string which appears to suggest scheduling failure.
+- When selecting a dataset or modifying the pipeline, I don't think it should trigger the pipeline as it does now, and the pipeline should only be triggered when the user explicitly triggers it through the "run" button.
+
+## 4. Demo video link
+
+**[Watch the demo video](demo.mp4)**
