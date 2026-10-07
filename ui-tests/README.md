@@ -28,7 +28,7 @@ RHOMBUS_S3_PREFIX=
 RHOMBUS_GCS_BUCKET=your-output-bucket
 RHOMBUS_GCS_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"..."}
 RHOMBUS_SCHEDULE_CRON=* * * * *
-RHOMBUS_SCHEDULE_TIMEOUT_MS=240000
+RHOMBUS_SCHEDULE_TIMEOUT_MS=90000
 RHOMBUS_PROJECT_PREFIX=ui-etl
 # Optional; these are already the defaults.
 RHOMBUS_VIEWPORT_WIDTH=1920
@@ -56,6 +56,6 @@ yarn test:ui:journey  # stateful S3 → AI cleaning → GCS → schedule journey
 yarn test:ui:headed   # visible browser
 ```
 
-The cloud journey is a serial group because each independently reported test verifies the next state in one customer pipeline. It is skipped with an explicit reason when cloud variables are absent; the smoke test still runs. Each run creates a uniquely named project so it cannot silently pass against stale state.
+The cloud journey is a serial group because each independently reported test verifies the next state in one customer pipeline. It includes a concurrency guard check: **Run Pipeline** must be disabled while an Apply-triggered execution is active and enabled again only after that execution succeeds. It is skipped with an explicit reason when cloud variables are absent; the smoke test still runs. Each run creates a uniquely named project so it cannot silently pass against stale state.
 
-The test deliberately does **not** use fixed sleeps. AI work, connection verification, execution completion, and the first scheduled execution are awaited through user-visible outcomes and bounded polling. Projects and schedules are retained as reproducible evidence; remove them manually after reviewing the run.
+The test deliberately does **not** use fixed sleeps. Ordinary outcomes have a maximum 15-second wait and ordinary tests are capped at 60 seconds. AI Builder node creation may wait up to 60 seconds, so the two AI-building tests have a 90-second test limit. The scheduled-run poll also has a 90-second default window to cover the next cron boundary. Projects and schedules are retained as reproducible evidence; remove them manually after reviewing the run.

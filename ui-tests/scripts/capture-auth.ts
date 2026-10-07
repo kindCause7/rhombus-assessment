@@ -27,7 +27,7 @@ async function main(): Promise<void> {
   await page.goto(baseURL);
   await page
     .getByRole('button', { name: 'Dashboard', exact: true })
-    .waitFor({ state: 'visible', timeout: 300_000 });
+    .waitFor({ state: 'visible', timeout: 60_000 });
   await fs.mkdir(path.dirname(statePath), { recursive: true });
   await context.storageState({ path: statePath });
   console.log(`Saved authenticated browser state to ${statePath}`);

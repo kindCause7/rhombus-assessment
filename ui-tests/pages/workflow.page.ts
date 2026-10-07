@@ -23,21 +23,32 @@ export class WorkflowPage {
     const canvas = this.page.getByTestId('rf__wrapper');
     for (const name of names) {
       const node = canvas.getByTestId(nodeTestId(name));
-      await expect(node).toHaveCount(1, { timeout: 120_000 });
+      await expect(node).toHaveCount(1, { timeout: 60_000 });
       await expect(node).toContainText(name);
       await expect(node).toBeVisible();
     }
   }
 
-  async runPipelineAndExpectSuccess(): Promise<void> {
-    await this.page.getByRole('tab', { name: 'Canvas' }).click();
-    await this.page.getByTestId('run-pipeline').click();
+  async expectRunBlocked(): Promise<void> {
+    await this.page.getByRole('tab', { name: 'Canvas', exact: true }).click();
+    await expect(this.page.getByTestId('run-pipeline')).toBeDisabled({ timeout: 15_000 });
+  }
 
-    // success is asserted from the customer-visible execution receipt
-    const successReceipt = this.page
-      .getByRole('status')
-      .filter({ hasText: /pipeline.*(success|completed)|completed successfully/i });
-    await expect(successReceipt).toBeVisible({ timeout: 180_000 });
+  async expectRunAvailable(): Promise<void> {
+    await expect(this.page.getByTestId('run-pipeline')).toBeEnabled({ timeout: 15_000 });
+  }
+
+  async runPipeline(): Promise<void> {
+    await this.page.getByRole('tab', { name: 'Canvas', exact: true }).click();
+    await this.page.getByTestId('run-pipeline').click();
+  }
+
+  async runPipelineAndExpectSuccess(): Promise<void> {
+    await this.runPipeline();
+    await this.page.getByRole('button', { name: 'Logs', exact: true }).click();
+    await expect(
+      this.page.getByText('Pipeline execution completed successfully.', { exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
   }
 }
 

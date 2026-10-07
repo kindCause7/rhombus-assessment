@@ -23,6 +23,32 @@ export class DashboardPage {
     return this.page.url();
   }
 
+  async waitForSuccessfulExecutionCount(
+    projectName: string,
+    minimumCount: number,
+    timeout = 15_000,
+  ): Promise<void> {
+    await expect
+      .poll(
+        async () => {
+          await this.page.goto('/dashboard');
+          await this.page.getByRole('tab', { name: 'Executions', exact: true }).click();
+          return this.page
+            .getByRole('tabpanel', { name: 'Executions', exact: true })
+            .getByRole('row')
+            .filter({ hasText: projectName })
+            .filter({ hasText: /\b(success|succeeded)\b/i })
+            .count();
+        },
+        {
+          timeout,
+          intervals: [1_000, 2_000, 5_000],
+          message: `at least ${minimumCount} successful executions for ${projectName}`,
+        },
+      )
+      .toBeGreaterThanOrEqual(minimumCount);
+  }
+
   async waitForSuccessfulExecution(projectName: string, timeout: number): Promise<void> {
     await expect
       .poll(
@@ -39,7 +65,7 @@ export class DashboardPage {
         },
         {
           timeout,
-          intervals: [2_000, 5_000, 10_000],
+          intervals: [1_000, 2_000, 5_000],
           message: `a successful execution for ${projectName} to appear on the dashboard`,
         },
       )

@@ -25,7 +25,7 @@ export class IntegrationsPage {
     await this.page.getByRole('heading', { name: 'Amazon S3', exact: true }).click();
 
     await expect(this.page.getByRole('heading', { name: 'Connection details' })).toBeVisible({
-      timeout: 30_000,
+      timeout: 15_000,
     });
     await this.page.getByRole('textbox', { name: 'Bucket*', exact: true }).fill(options.bucket);
     await this.page.getByRole('combobox', { name: 'Region*', exact: true }).click();
@@ -46,7 +46,7 @@ export class IntegrationsPage {
     // Avoid matching incidental s3:// text.
     const sourceName = new RegExp(`^${escapeRegex(options.bucket)}/?$`);
     await expect(this.page.getByRole('heading', { name: sourceName })).toBeVisible({
-      timeout: 120_000,
+      timeout: 15_000,
     });
     await expect(this.page.getByRole('button', { name: 'Browse files', exact: true })).toBeVisible();
   }
@@ -68,9 +68,24 @@ export class IntegrationsPage {
     // Real result of destination creation: the named bucket is offered as a
     // selectable destination. Exact matching prevents URI/helper text collisions.
     const destination = this.page.getByText(options.bucket, { exact: true });
-    await expect(destination).toBeVisible({ timeout: 60_000 });
+    await expect(destination).toBeVisible({ timeout: 15_000 });
     await destination.click();
     await sidebar.getByRole('button', { name: 'Apply', exact: true }).click();
+
+    // Applying an output configuration starts the pipeline. Wait for that run's
+    // durable log entry instead of immediately starting a competing second run.
+    await this.page.getByRole('button', { name: 'Logs', exact: true }).click();
+    await expect(
+      this.page.getByText('Pipeline execution completed successfully.', { exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
+  }
+
+  async applyConfiguredGcsOutput(): Promise<void> {
+    await this.page.getByTestId(/^node-output-(selected|unselected)$/).click();
+    await this.page
+      .getByTestId('right-sidebar')
+      .getByRole('button', { name: 'Apply', exact: true })
+      .click();
   }
 }
 

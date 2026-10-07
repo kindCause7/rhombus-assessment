@@ -20,7 +20,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
-  timeout: 90_000,
+  timeout: 60_000,
   expect: { timeout: 15_000 },
   use: {
     baseURL: process.env.RHOMBUS_BASE_URL ?? 'https://rhombusai.com',
