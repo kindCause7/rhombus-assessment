@@ -1,4 +1,4 @@
-# Rhombus test submission
+# Rhombus Take Home Assessment
 
 ## 1. Setup and how to run
 
@@ -109,6 +109,10 @@ no autosave on dashboard
 - As revealed during the UI-testing, pipeline scheduling appears to fail. On the client-side "Next run:" is followed by an empty string which appears to suggest scheduling failure.
 - When selecting a dataset or modifying the pipeline, I don't think it should trigger the pipeline as it does now, and the pipeline should only be triggered when the user explicitly triggers it through the "run" button.
 
-## 4. Demo video link
+## 4. Demo video
 
-**[Watch the demo video](demo.mp4)**
+<video src="demo.mp4" controls width="960">
+  Your Markdown viewer does not support embedded video. <a href="demo.mp4">Download or watch demo.mp4</a>.
+</video>
+
+[Open the demo video directly](demo.mp4)
